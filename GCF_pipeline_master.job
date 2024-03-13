@@ -1,0 +1,98 @@
+#!/bin/bash
+#SBATCH -p RM-shared
+#SBATCH --ntasks-per-node 4
+#SBATCH -t 48:00:00
+#SBATCH -o OUT/GCF_master.%N.%j.out
+#SBATCH -J GCFMaster
+#SBATCH --mail-type=END,FAIL      # notifications for job done & fail
+#SBATCH --mail-user=vis59@pitt.edu # send-to address
+
+echo "Starting Pipeline"
+
+# Checks to see if conda environment has been previously created. If not, creates it
+bash codes/create_conda_env.sh
+
+module load anaconda3/2022.10
+source activate codes/GCF_pipeline
+echo "Conda environment successfully activated."
+echo "$(python --version)"
+
+
+date="Nov_21"
+clinvar_vcf="clinvar_20231007.vcf" #input clinVar vcf file
+genelist="codes/ARGeneList2023_v2.txt"
+pops_list="pops.txt"
+#vcf_base_path_genome="/ocean/projects/bio140004p/alc217/Nov_20_genome_Gnomad_downloads" #path to directory where vcf files are stored (separated by chromosome) (no slash at end of path)
+# Make sure that your vcf filenames have "chr" and then chr number, followed by .vcf.bgz (e.g: gnomad_chr1.vcf.bgz)
+vcf_base_path_exome="/ocean/projects/bio140004p/alc217/Nov_29_exome_Gnomad_downloads"
+
+echo "Starting to parse clinvar vcf"
+
+python codes/parse_clinvar_data_full_run.py --date "$date" --clinvar "$clinvar_vcf" --genelist "$genelist"
+
+#get the removal correct here
+mkdir -p output
+mkdir -p output/parse_clin_out
+mv *_final_gene_list2.txt output/parse_clin_out
+mv *_selected_autorec_plp_nonconf_tsv2.tsv output/parse_clin_out
+mv *autorec_plp_nonconf_2.csv output/parse_clin_out
+
+
+echo "Splitting file by chrom"
+# 1). This scipt takes the original clinvar input and separates it by chromosome, since our vcf files are separated by chromosome
+python codes/split_chrom_loop_clin.py --date "$date"
+
+mkdir -p output/split_chrom
+cp ${date}_clin_*.tsv output/split_chrom
+	
+echo "Starting database query"
+
+# 2). This calls the bash script that will compare the clinvar variants with the variants from the provided vcf files
+mkdir -p output/database_query
+bash codes/database_query_gnomadv4_exome_only.sh $date $vcf_base_path_exome
+
+echo "Database Query Complete"
+
+
+echo "Calculating VCF + GCF"
+
+# Loops through all chromosomes
+for chrom in {1..22} 
+do
+output_file="output/database_query/${chrom}_database_search.tsv"
+# 3). This runs the python script that calculate VCF and GCF for each chromosome
+python codes/calc_freqs_full_run_v4_updated.py "$output_file" "$chrom" "$pops_list"
+done
+
+echo "Calculations Complete"
+
+cp *_GCF.tsv ./output/database_query/
+cp *_VCF.tsv ./output/database_query/
+cd ./output/database_query/
+
+# Concatenating chr# separated VCF and GCF files
+bash ../../codes/concatenate_chrom_freqs_VCF.sh $date
+bash ../../codes/concatenate_chrom_freqs_GCF.sh $date
+
+# File Organization
+mkdir -p database_search
+cp *_database_search.tsv database_search
+
+mkdir -p split_vcf+gcf
+for chrom in {1..22}
+do
+cp ${chrom}_VCF.tsv split_vcf+gcf/
+cp ${chrom}_GCF.tsv split_vcf+gcf/ 
+rm ${chrom}_VCF.tsv
+rm ${chrom}_GCF.tsv
+done
+
+# Deleting Unneeded Files
+rm *_database_search.tsv
+cd ../..
+rm *_GCF.tsv
+rm *_VCF.tsv
+rm ${date}_clin_*.tsv
+
+echo "Pipeline complete :)"
+

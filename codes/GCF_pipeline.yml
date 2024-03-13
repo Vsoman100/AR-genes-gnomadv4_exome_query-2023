@@ -1,0 +1,9 @@
+name: GCF_pipeline
+channels:
+  - defaults
+  - conda-forge
+dependencies:
+  - python=3.11.4
+  - numpy=1.25.2
+  - pandas=2.0.3
+prefix: ./GCF_pipeline
