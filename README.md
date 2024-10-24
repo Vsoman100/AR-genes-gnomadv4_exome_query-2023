@@ -11,6 +11,7 @@ This pipeline takes a filtered list of ClinVar variants as input (list created b
 
 Python version 3.11.9 (conda env provided) and bash version 4.4.19 were used in this pipeline. Computing resources from the University of Pittsburgh's Center for Research Computing were used. All code was run with through the Pittsburgh Supercomputing Center with 4 cores per node. A complete run filled 2.3 TB (including vcf file sizes) of spaces and took about 30 hours to complete (not including vcf file download time).
 
+--------------------------------------------------------------------------------------------------------------------
 
 Pipeline to query ClinVar vcf file based list of autosomal recessive genes to identify pathogenic/likely pathogenic variants. Then query those variants against gnomad v4 database to extract population frequencies for given variants. Then calculate VCF and GCF values based on the input varints.  
 
