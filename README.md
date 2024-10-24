@@ -22,4 +22,4 @@ The entire pipeline can be run by running the `GCF_pipeline_master.job` file. Va
   `-pops_list`: list of populations to extract frequency info from gnomAD. Current list contains all pops except for "Remaining Individuals" (RMI) population and "Amish" (AMI) <br />
   `-vcf_base_path_exome`: Full path to directory containing downloaded gnoMAD exome vcf files
 
-Repo currently contains the clinvar VCF from 10/7/2023, and results from running pipeline on gnomad v4.1 in `output` directory, ran April 2024. 
+Repo currently contains parsed clinvar output in `output/parse_clin_out`, and concatenated VCF and GCF results from running pipeline on gnomad v4.1 in `output/database_query` directory, ran April 2024. 
