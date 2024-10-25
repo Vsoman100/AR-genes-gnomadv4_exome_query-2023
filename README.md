@@ -23,3 +23,5 @@ The entire pipeline can be run by running the `GCF_pipeline_master.job` file. Va
   `-vcf_base_path_exome`: Full path to directory containing downloaded gnoMAD exome vcf files
 
 Repo currently contains parsed clinvar output in `output/parse_clin_out`, and concatenated VCF and GCF results from running pipeline on gnomad v4.1 in `output/database_query` directory, ran April 2024. 
+
+Pipeline written by Vishal Soman and Paris Kiehl.
